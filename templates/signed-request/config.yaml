@@ -1,0 +1,36 @@
+name: signed-request
+summary: >
+  Target requiring an HMAC signature header over the request (scaffold). Signs the exact
+  bytes sent. Edit the string-to-sign and header names to match your scheme.
+variables:
+  - key: endpoint
+    label: Run endpoint URL
+    example: https://host/v1/chat
+    required: true
+  - key: reply_path
+    label: Dotted JSON path to the reply text
+    example: reply
+    required: true
+  - key: prompt_field
+    label: Request body key that holds the prompt
+    example: message
+    required: false
+  - key: ts_header
+    label: Header carrying the timestamp
+    example: X-Timestamp
+    required: false
+  - key: sig_header
+    label: Header carrying the HMAC signature
+    example: X-Signature
+    required: false
+  - key: key_id_header
+    label: Header carrying the key id (if used)
+    example: X-Key-Id
+    required: false
+secrets:
+  - key: signing_key
+    label: HMAC signing secret
+    required: true
+  - key: key_id
+    label: Key id (optional)
+    required: false
