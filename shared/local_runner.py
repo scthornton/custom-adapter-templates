@@ -10,6 +10,11 @@ Usage:
       --config  templates/<name>/test-config.json
 
 Config JSON: {"vars": {...}, "secrets": {...}, "prompts": ["..."], "multi_turn": false}
+
+Trust boundary: this is a LOCAL dev harness. It exec()s the adapter file you point it
+at and makes real network calls to the URLs in your config. Run it only on adapters and
+targets you trust - never on an untrusted adapter or an operator-supplied URL you have
+not vetted. It is not a sandbox.
 """
 import argparse
 import json
@@ -106,8 +111,15 @@ class _Http:
             body = json.dumps(json_body).encode()
             h.setdefault("Content-Type", "application/json")
         elif data is not None:
-            body = urllib.parse.urlencode(data).encode()
-            h.setdefault("Content-Type", "application/x-www-form-urlencoded")
+            # `data` carries a raw body verbatim when it is str/bytes (xml-api,
+            # signed-request set their own Content-Type). Only a dict is form-encoded.
+            if isinstance(data, bytes):
+                body = data
+            elif isinstance(data, str):
+                body = data.encode()
+            else:
+                body = urllib.parse.urlencode(data).encode()
+                h.setdefault("Content-Type", "application/x-www-form-urlencoded")
         req = urllib.request.Request(url, data=body, headers=h, method=method)
         try:
             with urllib.request.urlopen(req, timeout=30) as r:

@@ -4,8 +4,8 @@
 # EDIT the marked lines to match yours. (Not covered by the HTTP mock - test against
 # a real WS target.)
 #
-# If the socket needs a token, add the `authenticate()` from oauth-bearer-rest and read
-# context.auth["token"] below.
+# If the socket needs a token: set a static one as the `token` secret, or add the
+# `authenticate()` from oauth-bearer-rest to fetch a short-lived one (context.auth).
 import asyncio
 import json
 
@@ -19,12 +19,19 @@ def call_target(context, inference_input):
 async def _run(context, prompt):
     url = context.vars["ws_url"]
     headers = {}
-    token = (context.auth or {}).get("token")
+    # Prefer a token fetched by authenticate() (context.auth), fall back to a static
+    # `token` secret so the declared secret works without adding authenticate().
+    token = None
+    if context.auth:
+        token = context.auth.get("token")
+    if not token:
+        token = context.secrets.get("token")
     if token:
         headers["Authorization"] = "Bearer " + token
 
-    # NOTE: some websockets versions use additional_headers= instead of extra_headers=
-    async with websockets.connect(url, extra_headers=headers) as ws:
+    # The AIRS runtime bundles websockets 15.x, which takes additional_headers=.
+    # (Older websockets called this extra_headers=; that name was removed in v14.)
+    async with websockets.connect(url, additional_headers=headers) as ws:
         # EDIT: shape the outbound message your target expects
         await ws.send(json.dumps({"input": prompt}))
 

@@ -4,7 +4,9 @@
 Capture a HAR of your working app talking to the target (browser DevTools -> Network
 -> Save all as HAR). Tell the tool the prompt you typed (and ideally the reply). It
 finds the auth / session / run calls, picks the matching template, and writes a filled
-config. Observed credentials are emitted as PLACEHOLDERS, never as literals.
+config. Credentials seen in headers and request bodies are emitted as PLACEHOLDERS.
+URL query strings are copied verbatim, so check them for embedded secrets (the tool
+flags any URL that carries a query string in FINDINGS.md).
 
 Usage:
   python3 tools/har_to_adapter.py --har capture.har --prompt "what I typed" \
@@ -22,6 +24,9 @@ import sys
 from urllib.parse import urlencode, urlsplit
 
 TEMPLATES = pathlib.Path(__file__).resolve().parent.parent / "templates"
+
+# Header names that commonly carry an API key when there is no Authorization: Bearer.
+API_KEY_HEADERS = ("x-api-key", "api-key", "apikey", "x-goog-api-key", "x-functions-key")
 
 
 def load_entries(path):
@@ -161,6 +166,17 @@ def main():
     prompt_field = prompt_path.split(".")[-1] if prompt_path else "message"
     nested_prompt = bool(prompt_path and "." in prompt_path)
 
+    # custom API-key header on the run call (no Authorization: Bearer)
+    api_key_header = None
+    if not bearer:
+        for h in run["request"]["headers"]:
+            if h.get("name", "").lower() in API_KEY_HEADERS:
+                api_key_header = h.get("name")
+                break
+
+    # OpenAI-style chat/completions: the prompt sits inside a messages[] array
+    chat_shape = bool(prompt_path and "messages" in prompt_path)
+
     # ---- choose template + build vars/secrets ----
     if session_url:
         template = "oauth-session-rest"
@@ -174,6 +190,16 @@ def main():
             "reply_path": reply_path or "<SET reply_path>",
         }
         secrets = ["client_id", "client_secret"]
+    elif chat_shape:
+        template = "chat-completions"
+        vars_ = {"endpoint": run_url,
+                 "reply_path": reply_path or "choices.0.message.content"}
+        secrets = ["api_key"]
+    elif api_key_header:
+        template = "api-key-header"
+        vars_ = {"endpoint": run_url, "key_header": api_key_header,
+                 "prompt_field": prompt_field, "reply_path": reply_path or "<SET reply_path>"}
+        secrets = ["api_key"]
     elif token_url:
         template = "oauth-bearer-rest"
         vars_ = {"token_url": token_url, "endpoint": run_url,
@@ -184,6 +210,21 @@ def main():
         vars_ = {"endpoint": run_url, "prompt_field": prompt_field,
                  "reply_path": reply_path or "<SET reply_path>"}
         secrets = ["api_key"]
+
+    # URLs are copied verbatim; flag any that carry a query string (possible secret).
+    urls_with_query = [(label, u) for label, u in
+                       (("run", run_url), ("token", token_url), ("session", session_url))
+                       if u and urlsplit(u).query]
+
+    # auth description for FINDINGS
+    if api_key_header:
+        auth_desc = "API key in header `" + api_key_header + "`"
+    elif token_url:
+        auth_desc = "OAuth token call at " + token_url
+    elif bearer:
+        auth_desc = "static bearer in the run request"
+    else:
+        auth_desc = "none detected"
 
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -198,12 +239,19 @@ def main():
     lines.append("Matched template: **%s** (adapter.py copied to this folder)\n" % template)
     lines.append("## Detected")
     lines.append("- run call: `%s %s`" % (run["request"]["method"], run_url))
-    lines.append("- auth: %s" % ("OAuth token call at " + token_url if token_url else
-                                 ("static bearer in the run request" if bearer else "none detected")))
+    lines.append("- auth: %s" % auth_desc)
     lines.append("- session: %s" % ("created at " + session_url + " (id field `" + str(session_id_field) + "`)"
                                     if session_url else "none"))
-    lines.append("- prompt field: `%s`%s" % (prompt_field, "  (NESTED - body is not flat; see below)" if nested_prompt else ""))
+    lines.append("- prompt field: `%s`%s" % (prompt_field, "  (NESTED - handled by chat-completions)"
+                                             if (nested_prompt and template == "chat-completions")
+                                             else ("  (NESTED - body is not flat; see below)" if nested_prompt else "")))
     lines.append("- reply path: `%s`" % (reply_path or "NOT FOUND - pass --reply, or set reply_path"))
+    if urls_with_query:
+        lines.append("\n## Check these URLs for embedded secrets")
+        lines.append("These URLs carry a query string, copied verbatim into the config. If a query "
+                     "parameter is a credential, move it to a secret instead of leaving it in the URL:")
+        for label, u in urls_with_query:
+            lines.append("- %s: `%s`" % (label, u))
     lines.append("\n## Enter in SCM")
     lines.append("Variables:")
     for k, v in vars_.items():
@@ -213,9 +261,13 @@ def main():
         lines.append("- `%s`" % s)
     lines.append("\n## Verify")
     lines.append("- Any `<SET ...>` value above.")
-    if nested_prompt:
+    if nested_prompt and template != "chat-completions":
         lines.append("- Prompt body is **nested** (`%s`). The flat templates send `{field: prompt}`; "
                      "for a nested body (e.g. chat-completions `messages`), use that template or edit `pre_process`." % prompt_path)
+    if template == "chat-completions" and token_url:
+        lines.append("- An OAuth token call was also seen. The chat-completions template uses a static "
+                     "`api_key` bearer; if the token is short-lived, add the `authenticate()` from "
+                     "oauth-bearer-rest to fetch and refresh it.")
     lines.append("- Confirm the reply path against a real response.")
     lines.append("- Fill the secret placeholders in `test-config.json`, then run:")
     lines.append("  ```")

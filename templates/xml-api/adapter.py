@@ -4,6 +4,12 @@
 # match your schema. (Not covered by the JSON mock - test against a real target.)
 import xml.etree.ElementTree as ET
 
+# The target's XML response is untrusted. stdlib ElementTree has no safe-parse mode, so
+# guard against entity-expansion DoS (billion-laughs / quadratic blowup) by refusing any
+# DTD/entity declaration and capping the payload before parsing. defusedxml would be the
+# usual answer, but the adapter runtime is stdlib + httpx + websockets only.
+_MAX_XML_BYTES = 5_000_000
+
 
 def pre_process(context, inference_input):
     # EDIT: build the XML envelope your target expects
@@ -22,7 +28,13 @@ def post_process(context, raw_response):
         raise_rate_limited(retry_after=30)
     if raw_response.status_code != 200:
         raise_target_error("target returned " + str(raw_response.status_code))
-    root = ET.fromstring(raw_response.text)
+    xml_text = raw_response.text
+    if len(xml_text) > _MAX_XML_BYTES:
+        raise_target_error("XML response too large; refusing to parse (DoS guard)")
+    lowered = xml_text.lower()
+    if "<!doctype" in lowered or "<!entity" in lowered:
+        raise_target_error("XML response declares a DTD/entity; refusing to parse (DoS guard)")
+    root = ET.fromstring(xml_text)
     # EDIT: ElementTree find-path to the reply element (e.g. ".//reply")
     node = root.find(context.vars["reply_xpath"])
     text = node.text if node is not None else raw_response.text
