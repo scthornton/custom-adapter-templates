@@ -7,7 +7,7 @@
 - Request: `POST {endpoint}` with the bearer, body `{"message": "<prompt>"}`
 - Reply: read from `reply_path`
 
-> If your body key isn't `message`, edit the `json_body` line in `adapter.py`.
+> If your body key isn't `message`, set the `prompt_field` variable - no code edit needed.
 
 ## Fill in
 
@@ -16,6 +16,7 @@
 | variable | `token_url` | OAuth token endpoint |
 | variable | `endpoint` | run endpoint URL |
 | variable | `reply_path` | JSON path to the reply text |
+| variable | `prompt_field` | body key that holds the prompt (optional, default `message`) |
 | secret | `client_id` | OAuth client id |
 | secret | `client_secret` | OAuth client secret |
 
