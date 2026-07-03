@@ -15,6 +15,10 @@ variables:
     label: Dotted JSON path to the reply text
     example: reply
     required: true
+  - key: prompt_field
+    label: Request body key that holds the prompt
+    example: message
+    required: false
 secrets:
   - key: client_id
     required: true

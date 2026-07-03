@@ -30,8 +30,24 @@ The first three are fully fill-in-the-blanks and mock-tested. `websocket-chat` a
 3. Set the **variables** + **secrets** listed in the template's `config.yaml`.
 4. Select your network channel and click **Validate**.
 
-Not sure of the shape? Run the [discovery questions](docs/discovery-questions.md), or
-capture a **HAR** of your working app and match it to a template.
+Not sure of the shape? Run the [discovery questions](docs/discovery-questions.md), or use
+the **HAR importer** below.
+
+## HAR importer (auto-fill from a capture)
+
+Capture a HAR of your working app talking to the target (browser DevTools -> Network ->
+Save all as HAR), then let the tool pick the template and fill the config:
+
+```bash
+python3 tools/har_to_adapter.py --har capture.har \
+  --prompt "what I typed" --reply "the reply I got" --out out/
+```
+
+It classifies the auth / session / run calls, extracts the endpoint, session handling,
+`prompt_field`, and `reply_path`, copies the matching `adapter.py`, and writes
+`out/test-config.json` + `out/FINDINGS.md`. **Observed credentials are emitted as
+placeholders, never literals** - you set the real secrets. Covers HTTP + session flows
+(what a HAR captures); WebSocket/streaming isn't in a HAR.
 
 ## Test locally first
 

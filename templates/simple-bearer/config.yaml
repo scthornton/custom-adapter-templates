@@ -11,6 +11,10 @@ variables:
     label: Dotted JSON path to the reply text (numbers = array index)
     example: reply            # or: choices.0.message.content
     required: true
+  - key: prompt_field
+    label: Request body key that holds the prompt
+    example: message
+    required: false
 secrets:
   - key: api_key
     label: Static API key / bearer token
