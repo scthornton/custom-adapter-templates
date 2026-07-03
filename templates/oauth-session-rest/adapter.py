@@ -39,7 +39,8 @@ def pre_process(context, inference_input):
         "Authorization": "Bearer " + token,
         "Content-Type": "application/json",
     }
-    return PreProcessResult(url=url, headers=headers, json_body={"input": inference_input.prompt})
+    field = context.vars.get("prompt_field", "input")
+    return PreProcessResult(url=url, headers=headers, json_body={field: inference_input.prompt})
 
 
 def post_process(context, raw_response):

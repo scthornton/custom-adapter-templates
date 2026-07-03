@@ -5,10 +5,11 @@
 
 def pre_process(context, inference_input):
     headers = {"Authorization": "Bearer " + context.secrets["api_key"]}
+    field = context.vars.get("prompt_field", "message")
     return PreProcessResult(
         url=context.vars["endpoint"],
         headers=headers,
-        json_body={"message": inference_input.prompt},
+        json_body={field: inference_input.prompt},
     )
 
 
