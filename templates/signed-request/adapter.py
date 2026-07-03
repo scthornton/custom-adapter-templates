@@ -4,12 +4,15 @@
 # and header names to match your target's scheme.
 import hashlib
 import hmac
+import json
 import time
 
 
 def pre_process(context, inference_input):
     field = context.vars.get("prompt_field", "message")
-    body = "{" + _q(field) + ":" + _q(inference_input.prompt) + "}"
+    # json.dumps escapes the full control-char range, so the signed bytes are always
+    # valid JSON even for adversarial prompts. `data` carries these exact bytes.
+    body = json.dumps({field: inference_input.prompt})
     ts = str(int(time.time()))
     secret = context.secrets["signing_key"].encode()
     # EDIT: the exact string your target signs (often method + path + timestamp + body)
@@ -32,12 +35,6 @@ def post_process(context, raw_response):
     if raw_response.status_code != 200:
         raise_target_error("target returned " + str(raw_response.status_code))
     return PostProcessResult(output=_extract(raw_response.json_body, context.vars["reply_path"]))
-
-
-def _q(s):
-    # minimal JSON string with escaping
-    out = str(s).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
-    return '"' + out + '"'
 
 
 def _extract(body, path):

@@ -11,6 +11,9 @@ Endpoints:
 Creds: api_key=demo-key ; client_id=demo-client ; client_secret=demo-secret
 Auth: Authorization: Bearer <api_key|token>  or  X-API-Key: <api_key>
 
+Binds 127.0.0.1 by default (local-only, no TLS). It is a test fixture, not a server to
+expose; pass --host 0.0.0.0 only if you deliberately need it reachable off-box.
+
 Run:  python3 testing/mock_target.py --port 8080
 """
 import argparse
@@ -115,9 +118,11 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8080)
+    ap.add_argument("--host", default="127.0.0.1",
+                    help="bind address (default 127.0.0.1, local-only; no TLS)")
     args = ap.parse_args()
-    print("mock target on :%d  (api_key=%s, client_id=%s)" % (args.port, API_KEY, CLIENT_ID))
-    HTTPServer(("0.0.0.0", args.port), Handler).serve_forever()
+    print("mock target on %s:%d  (api_key=%s, client_id=%s)" % (args.host, args.port, API_KEY, CLIENT_ID))
+    HTTPServer((args.host, args.port), Handler).serve_forever()
 
 
 if __name__ == "__main__":

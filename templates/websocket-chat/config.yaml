@@ -9,5 +9,5 @@ variables:
     required: true
 secrets:
   - key: token
-    label: Bearer token (only if you add authenticate())
+    label: Bearer token - static value, or fetched by authenticate() (optional)
     required: false
