@@ -1,0 +1,72 @@
+name: smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile all Python
+        run: |
+          python -m py_compile \
+            shared/local_runner.py \
+            testing/mock_target.py \
+            tools/har_to_adapter.py \
+            templates/*/adapter.py
+
+      - name: Run REST templates against the mock target
+        run: |
+          set -euo pipefail
+
+          # Start the mock target and own its lifecycle (kill on any exit).
+          python3 testing/mock_target.py --port 8080 >mock.log 2>&1 &
+          MOCK_PID=$!
+          trap 'kill "$MOCK_PID" 2>/dev/null || true' EXIT
+
+          # Wait for the mock to accept connections before running probes.
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/healthz >/dev/null 2>&1; then
+              break
+            fi
+            if [ "$i" = "30" ]; then
+              echo "mock target did not become ready"; cat mock.log; exit 1
+            fi
+            sleep 0.5
+          done
+
+          FAILED=0
+          for t in simple-bearer oauth-bearer-rest oauth-session-rest chat-completions api-key-header; do
+            OUT="$(python3 shared/local_runner.py \
+              --adapter "templates/$t/adapter.py" \
+              --config  "templates/$t/test-config.json" 2>&1)"
+            echo "----- $t -----"
+            echo "$OUT"
+            LAST="$(echo "$OUT" | tail -1)"
+            # Expect "=> N/M passed" with N == M and N > 0, and no probe FAIL.
+            if echo "$OUT" | grep -q "FAIL"; then FAILED=1; fi
+            if ! echo "$LAST" | awk '
+              match($0, /=> [0-9]+\/[0-9]+ passed/) {
+                split(substr($0, RSTART+3), a, " ");
+                split(a[1], nm, "/");
+                if (nm[1] == nm[2] && nm[1]+0 > 0) ok=1;
+              }
+              END { exit ok ? 0 : 1 }'; then FAILED=1; fi
+          done
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo "one or more templates failed the smoke test"; exit 1
+          fi
+          echo "all REST templates passed"
