@@ -1,0 +1,21 @@
+name: chat-completions
+summary: >
+  OpenAI-style chat/completions target. Sends a messages array and reads the reply
+  from choices[0].message.content.
+variables:
+  - key: endpoint
+    label: Chat completions endpoint URL
+    example: https://host/v1/chat/completions
+    required: true
+  - key: model
+    label: Model name to send (omit if the endpoint doesn't need one)
+    example: gpt-4.1-mini
+    required: false
+  - key: reply_path
+    label: Dotted JSON path to the reply text
+    example: choices.0.message.content
+    required: false
+secrets:
+  - key: api_key
+    label: Bearer token / API key
+    required: true
