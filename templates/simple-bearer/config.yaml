@@ -1,0 +1,17 @@
+name: simple-bearer
+summary: >
+  REST JSON target with a static API key / bearer. Sends {"message": prompt}
+  and reads the reply from a configurable JSON path.
+variables:
+  - key: endpoint
+    label: Run endpoint URL
+    example: https://host/v1/chat
+    required: true
+  - key: reply_path
+    label: Dotted JSON path to the reply text (numbers = array index)
+    example: reply            # or: choices.0.message.content
+    required: true
+secrets:
+  - key: api_key
+    label: Static API key / bearer token
+    required: true

@@ -1,0 +1,22 @@
+name: oauth-bearer-rest
+summary: >
+  REST JSON target behind OAuth2 client_credentials. Fetches a bearer token
+  (cached + auto-refreshed), sends {"message": prompt}, reads a JSON reply path.
+variables:
+  - key: token_url
+    label: OAuth token endpoint
+    example: https://host/oauth/token
+    required: true
+  - key: endpoint
+    label: Run endpoint URL
+    example: https://host/v1/chat
+    required: true
+  - key: reply_path
+    label: Dotted JSON path to the reply text
+    example: reply
+    required: true
+secrets:
+  - key: client_id
+    required: true
+  - key: client_secret
+    required: true
