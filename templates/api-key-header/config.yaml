@@ -1,0 +1,25 @@
+name: api-key-header
+summary: >
+  REST JSON target where the API key goes in a custom header (e.g. X-API-Key) rather
+  than Authorization: Bearer. Sends {prompt_field: prompt}, reads a JSON reply path.
+variables:
+  - key: endpoint
+    label: Run endpoint URL
+    example: https://host/v1/chat
+    required: true
+  - key: key_header
+    label: Header name that carries the API key
+    example: X-API-Key
+    required: false
+  - key: reply_path
+    label: Dotted JSON path to the reply text
+    example: reply
+    required: true
+  - key: prompt_field
+    label: Request body key that holds the prompt
+    example: message
+    required: false
+secrets:
+  - key: api_key
+    label: API key value
+    required: true

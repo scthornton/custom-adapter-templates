@@ -17,6 +17,8 @@ closest template, set variables + secrets, validate. No writing Python from scra
 | `simple-bearer` | REST JSON, static API key | static bearer | no |
 | `oauth-bearer-rest` | REST JSON, OAuth token | OAuth client_credentials | no |
 | `oauth-session-rest` | REST + per-conversation session (e.g. Google CES) | OAuth client_credentials | yes (single-use) |
+| `chat-completions` | OpenAI chat/completions shape | bearer | no |
+| `api-key-header` | REST JSON, key in a custom header | custom header | no |
 | `websocket-chat` | WebSocket streaming chat | token | optional |
 | `xml-api` | XML / SOAP request-response | key / bearer | no |
 

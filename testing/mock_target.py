@@ -3,11 +3,13 @@
 
 Endpoints:
   POST /oauth/token          form client_credentials -> {access_token, ...}
-  POST /v1/chat              bearer -> {"reply": ...}            (simple-bearer, oauth-bearer)
+  POST /v1/chat              bearer OR X-API-Key -> {"reply": ...}   (simple-bearer, api-key-header)
+  POST /v1/chat/completions  bearer -> {"choices":[{"message":{"content":...}}]}  (chat-completions)
   POST /v1/sessions          bearer -> {id, session_id} (single-use)   (oauth-session)
   POST /v1/agents/<id>:run   bearer + valid session -> {"outputs": ...} (single-use)
 
 Creds: api_key=demo-key ; client_id=demo-client ; client_secret=demo-secret
+Auth: Authorization: Bearer <api_key|token>  or  X-API-Key: <api_key>
 
 Run:  python3 testing/mock_target.py --port 8080
 """
@@ -70,7 +72,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"access_token": t, "token_type": "Bearer", "expires_in": 3600})
 
         tok = self._bearer()
-        if tok != API_KEY and tok not in TOKENS:
+        apikey = self.headers.get("X-API-Key", "")
+        if tok != API_KEY and tok not in TOKENS and apikey != API_KEY:
             return self._send(401, {"error": "unauthorized"})
 
         try:
@@ -81,6 +84,16 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/v1/chat":
             return self._send(200, {"reply": reply_for(prompt)})
+
+        if path == "/v1/chat/completions":
+            user = ""
+            for m in (body.get("messages") or []):
+                if m.get("role") == "user":
+                    user = m.get("content", "")
+            return self._send(200, {
+                "choices": [{"message": {"role": "assistant", "content": reply_for(user)}}],
+                "usage": {"total_tokens": 10},
+            })
 
         if path == "/v1/sessions":
             sid = uuid.uuid4().hex
