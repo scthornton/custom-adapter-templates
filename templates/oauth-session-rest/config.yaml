@@ -1,0 +1,34 @@
+name: oauth-session-rest
+summary: >
+  REST target that needs OAuth2 + a per-conversation session (e.g. Google CES, where
+  each session is single-use). Mints a fresh session per conversation.
+variables:
+  - key: token_url
+    label: OAuth token endpoint
+    example: https://host/oauth/token
+    required: true
+  - key: session_url
+    label: Session-create endpoint (POST, returns a session id)
+    example: https://host/v1/sessions
+    required: true
+  - key: run_base
+    label: Base URL the session id is appended to
+    example: https://host/v1/agents
+    required: true
+  - key: run_suffix
+    label: Suffix after the session id in the run URL
+    example: ":run"          # Google CES uses ":streamRunSession"
+    required: false
+  - key: session_id_field
+    label: JSON field in the session-create response holding the id
+    example: session_id       # or "id", "name"
+    required: false
+  - key: reply_path
+    label: Dotted JSON path to the reply text
+    example: outputs
+    required: false
+secrets:
+  - key: client_id
+    required: true
+  - key: client_secret
+    required: true
