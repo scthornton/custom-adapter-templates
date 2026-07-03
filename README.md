@@ -20,7 +20,8 @@ closest template, set variables + secrets, validate. No writing Python from scra
 | `websocket-chat` | WebSocket streaming chat | token | optional |
 | `xml-api` | XML / SOAP request-response | key / bearer | no |
 
-(Templates land via PRs - see the `templates/` directory.)
+The first three are fully fill-in-the-blanks and mock-tested. `websocket-chat` and
+`xml-api` are **scaffolds** (edit the protocol-specific lines - marked in the file).
 
 ## How to use
 

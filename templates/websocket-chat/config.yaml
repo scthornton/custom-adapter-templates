@@ -1,0 +1,13 @@
+name: websocket-chat
+summary: >
+  Streaming chat over a WebSocket (Pattern B / call_target). Scaffold - edit the
+  send/receive framing to match your target.
+variables:
+  - key: ws_url
+    label: WebSocket URL
+    example: wss://host/v1/chat/stream
+    required: true
+secrets:
+  - key: token
+    label: Bearer token (only if you add authenticate())
+    required: false

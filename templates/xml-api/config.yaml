@@ -1,0 +1,17 @@
+name: xml-api
+summary: >
+  XML / SOAP request-response target (Pattern A). Scaffold - edit the request
+  envelope and reply path to match your schema.
+variables:
+  - key: endpoint
+    label: Run endpoint URL
+    example: https://host/soap/chat
+    required: true
+  - key: reply_xpath
+    label: ElementTree find-path to the reply element
+    example: ".//reply"
+    required: true
+secrets:
+  - key: api_key
+    label: Bearer/API key (optional)
+    required: false
