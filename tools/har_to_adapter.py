@@ -14,11 +14,12 @@ Covers HTTP request/response + session flows (what a HAR captures). WebSocket /
 streaming targets aren't in a HAR - use the websocket-chat template.
 """
 import argparse
+import base64
 import json
 import pathlib
 import shutil
 import sys
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 
 TEMPLATES = pathlib.Path(__file__).resolve().parent.parent / "templates"
 
@@ -28,9 +29,24 @@ def load_entries(path):
 
 
 def body_text(msg):
+    # request bodies live in postData; response bodies in content.
     if "postData" in msg:
-        return msg["postData"].get("text", "") or ""
-    return (msg.get("content") or {}).get("text", "") or ""
+        pd = msg["postData"] or {}
+        if pd.get("text"):
+            return pd["text"]
+        params = pd.get("params")  # some browsers store form fields as an array
+        if params:
+            return urlencode([(p.get("name", ""), p.get("value", "")) for p in params])
+        return ""
+    content = msg.get("content") or {}
+    text = content.get("text", "") or ""
+    # browsers may base64-encode response bodies (content.encoding == "base64")
+    if content.get("encoding") == "base64" and text:
+        try:
+            return base64.b64decode(text).decode("utf-8", "replace")
+        except Exception:
+            return text
+    return text
 
 
 def as_json(text):
