@@ -21,9 +21,13 @@ closest template, set variables + secrets, validate. No writing Python from scra
 | `api-key-header` | REST JSON, key in a custom header | custom header | no |
 | `websocket-chat` | WebSocket streaming chat | token | optional |
 | `xml-api` | XML / SOAP request-response | key / bearer | no |
+| `graphql` | GraphQL query / mutation | bearer | no |
+| `signed-request` | HMAC-signed request | signing key | no |
 
-The first three are fully fill-in-the-blanks and mock-tested. `websocket-chat` and
-`xml-api` are **scaffolds** (edit the protocol-specific lines - marked in the file).
+The REST/HTTP templates (`simple-bearer`, `oauth-bearer-rest`, `oauth-session-rest`,
+`chat-completions`, `api-key-header`) are fully fill-in-the-blanks and mock-tested.
+`websocket-chat`, `xml-api`, `graphql`, and `signed-request` are **scaffolds** - edit the
+protocol-specific lines (marked in the file).
 
 ## How to use
 

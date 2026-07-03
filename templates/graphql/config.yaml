@@ -1,0 +1,25 @@
+name: graphql
+summary: >
+  GraphQL target (scaffold). POSTs a query + variables with the prompt as a variable;
+  reads the reply from a path under "data". Edit the query and reply path.
+variables:
+  - key: endpoint
+    label: GraphQL endpoint URL
+    example: https://host/graphql
+    required: true
+  - key: query
+    label: GraphQL query/mutation string (uses your prompt variable)
+    example: "mutation($input:String!){ chat(message:$input){ reply } }"
+    required: true
+  - key: prompt_var
+    label: GraphQL variable name that receives the prompt
+    example: input
+    required: false
+  - key: reply_path
+    label: Dotted JSON path to the reply (under data)
+    example: data.chat.reply
+    required: true
+secrets:
+  - key: api_key
+    label: Bearer token (optional)
+    required: false
