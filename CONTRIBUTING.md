@@ -1,12 +1,14 @@
 # Contributing a template
 
-A template is a folder under `templates/<name>/` with three files:
+A template is a folder under `templates/<name>/` with three files, plus a
+`test-config.json` if the template can be validated against the mock target:
 
 ```
 templates/<name>/
-  adapter.py     # the paste-ready script (one pattern; no f-strings; short lines)
-  config.yaml    # the variables + secrets a user must fill (the "form")
-  README.md      # when to use it, the target shape, how to fill + test
+  adapter.py        # the paste-ready script (one pattern; no f-strings; short lines)
+  config.yaml       # the variables + secrets a user must fill (the "form")
+  README.md         # when to use it, the target shape, how to fill + test
+  test-config.json  # optional: vars/secrets/prompts for the local runner + mock
 ```
 
 ## Rules

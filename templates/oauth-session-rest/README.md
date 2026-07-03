@@ -23,6 +23,7 @@ fresh session** and the scan runs clean.
 | variable | `run_base` | base URL before the session id | - |
 | variable | `run_suffix` | suffix after the session id | `:run` (CES: `:streamRunSession`) |
 | variable | `session_id_field` | id field in the session response | `session_id` |
+| variable | `prompt_field` | body key that holds the prompt | `input` |
 | variable | `reply_path` | JSON path to the reply | `outputs` |
 | secret | `client_id` / `client_secret` | OAuth creds | - |
 

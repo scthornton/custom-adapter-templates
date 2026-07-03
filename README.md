@@ -70,3 +70,7 @@ each template README for the exact command.
 ## Status
 
 Early / actively built out. Templates and tooling arrive in small PRs.
+
+## License
+
+MIT - see [LICENSE](LICENSE).
